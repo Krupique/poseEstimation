@@ -34,27 +34,53 @@ def getProportionalDistance(pontoA, pontoB):
     dist = np.linalg.norm(arrA-arrB)
     return dist
 
-def identificarAnormalidade(distanciaMaos, posicaoPernas, ombroEsq, ombroDir, cotoveloEsq, cotoveloDir):
+def calculatePose(ang_LeftHip, ang_RightHip, ang_LeftKnee, ang_RightKnee, ang_LeftShoulder, ang_RightShoulder, ang_LeftElbow, ang_RightElbow):
     
-    suspeito = 'EM PE' #YES
-    if ombroEsq == 'baixo' and ombroDir == 'baixo':
-        suspeito = 'EM PE'
-    if ombroEsq == 'alto' and cotoveloEsq == 'dobrado' and ombroDir == 'alto' and cotoveloDir == 'dobrado':
-        suspeito = 'RENDIDO'
-    if ombroEsq == 'alto' and cotoveloEsq == 'reto' or ombroDir == 'alto' and cotoveloDir == 'reto':
-        suspeito = 'APONTANDO'
+    lowerPose = 'NULL'
+    upperLeftPose = 'NULL'
+    upperRightPose = 'NULL'
 
-    return suspeito
+    if ang_LeftHip > 120 and ang_RightHip > 120 and ang_LeftKnee > 120 and ang_RightKnee > 120:
+        lowerPose = 'STANDING'
+    else:
+        lowerPose = 'SITTING'
+
+    if ang_LeftShoulder > 120:
+        upperLeftPose = 'RAISED'
+    else:
+        upperLeftPose = 'DOWN'
+
+    if ang_RightShoulder > 120:
+        upperRightPose = 'RAISED'
+    else:
+        upperRightPose = 'DOWN'
+
+    print('The person is {} with left arm {} and right arm {}'.format(lowerPose, upperLeftPose, upperRightPose))
+    return 'null'
 
 
 def bodyPoints(landmark):
     #Block to identify the relative distance between points
-
+    '''
     dist = getProportionalDistance(landmark[15], landmark[16])
-    HandsDist = 'distant'
+    print('Hands: {}'.format(dist))
+    handsDist = 'distant'
     if dist <= 0.25:
-        HandsDist = 'close'
-    
+        handsDist = 'close'
+
+    dist = getProportionalDistance(landmark[15], landmark[23])
+    print('Left hand hip: {}'.format(dist))
+    leftHandHipDist = 'distant'
+    if dist <= 0.25:
+        leftHandHipDist = 'close'
+
+    dist = getProportionalDistance(landmark[16], landmark[24])
+    print('Right hand hip: {}'.format(dist))
+    rightHandHipDist = 'distant'
+    if dist <= 0.25:
+        rightHandHipDist = 'close'
+
+    '''
     #Block to identify the angles
     
     #Lower Members
@@ -108,13 +134,10 @@ def bodyPoints(landmark):
     print('Left Elbow: {}'.format(ang_LeftElbow))
     print('Right Elbow: {}'.format(ang_RightElbow))
 
-    print('Dist')
-    print('Hands distance: {}'.format(dist))
-
-    return 'OK'
+    return ang_LeftHip, ang_RightHip, ang_LeftKnee, ang_RightKnee, ang_LeftShoulder, ang_RightShoulder, ang_LeftElbow, ang_RightElbow
 
 
-def pose_estimation(frame):
+def poseEstimation(frame):
     
     position = 'NULL'
     mpDraw = mp.solutions.drawing_utils
@@ -125,16 +148,16 @@ def pose_estimation(frame):
     #print(results.pose_landmarks)
     if results.pose_landmarks:
         mpDraw.draw_landmarks(frame, results.pose_landmarks, mpPose.POSE_CONNECTIONS) #Exibe as linhas
-        _ = bodyPoints(results.pose_landmarks.landmark)
-        #position = identificarAnormalidade(distanciaMaos, posicaoPernas, ombroEsq, ombroDir, cotoveloEsq, cotoveloDir)
+        ang_LeftHip, ang_RightHip, ang_LeftKnee, ang_RightKnee, ang_LeftShoulder, ang_RightShoulder, ang_LeftElbow, ang_RightElbow = bodyPoints(results.pose_landmarks.landmark)
+        position = calculatePose(ang_LeftHip, ang_RightHip, ang_LeftKnee, ang_RightKnee, ang_LeftShoulder, ang_RightShoulder, ang_LeftElbow, ang_RightElbow)
     
     return position
 
 def main():
-    path = 'dataImages/img01.jpg'
+    path = 'dataImages/img05.jpg'
     image = cv2.imread(path)
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    movimento = pose_estimation(image)
+    movimento = poseEstimation(image)
     print(movimento)
     cv2.imshow("Saida", image)
     cv2.waitKey(0)
